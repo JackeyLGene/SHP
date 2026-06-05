@@ -11,10 +11,13 @@ in cross-harm above a calibrated fair-IID threshold define structural events.
 
 from __future__ import annotations
 
+from collections import Counter, defaultdict
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 import gzip
 import hashlib
 import math
+import random
 from pathlib import Path
 from typing import Iterable, Iterator
 
@@ -71,7 +74,6 @@ def _moments(values: list[float]) -> tuple[float, float]:
 
 def normalize_dna(seq: str) -> str:
     """Keep only A/C/G/T symbols and uppercase them."""
-
     return "".join(ch for ch in seq.upper() if ch in "ACGT")
 
 
@@ -121,6 +123,73 @@ def compute_shp(
     )
 
 
+def calibrate_theta0(
+    ngram: int = 3, dim: int = 64, window: int = 128, seeds: int = 20, t: int = 10000
+) -> float:
+    """Calibrate theta0 from fair IID streams.
+
+    Generates `seeds` independent k=4 fair IID streams of `t` symbols,
+    computes the per-stream 99th percentile of cross-harm displacement,
+    and returns the mean across seeds.
+    """
+    alphabet = "ACGT"
+    q = 0.99
+    theta_values: list[float] = []
+    for seed in range(seeds):
+        rng = random.Random(seed)
+        seq = "".join(rng.choice(alphabet) for _ in range(t))
+        result = compute_shp(
+            seq, ngram=ngram, dim=dim, window=window, theta0=0.0, alphabet=alphabet
+        )
+        if result.n_transitions < 10:
+            continue
+        # Recompute displacements for theta calibration
+        stride = max(1, window // 5)
+        clean = "".join(ch for ch in seq.upper() if ch in alphabet)
+        hs: list[float] = []
+        for win in _windows(clean, window, stride):
+            kmers = [win[i : i + ngram] for i in range(0, len(win) - ngram + 1)]
+            chroma = {_hash_bucket("C:" + k, dim) for k in kmers}
+            rhythm = {_hash_bucket("R:" + a + ">" + b, dim) for a, b in zip(kmers[:-1], kmers[1:])}
+            hs.append(_jaccard_distance(chroma, rhythm))
+        ds = [abs(hs[i] - hs[i - 1]) for i in range(1, len(hs))]
+        ds_sorted = sorted(ds)
+        idx = max(0, int(q * len(ds_sorted)) - 1)
+        theta_values.append(ds_sorted[idx])
+    return sum(theta_values) / len(theta_values) if theta_values else DEFAULT_THETA0
+
+
+def dinuc_shuffle(seq: str, seed: int) -> str:
+    """Dinucleotide-preserving shuffle of a DNA sequence."""
+    if len(seq) < 4:
+        return seq
+    rng = random.Random(seed)
+    edges = Counter()
+    for i in range(len(seq) - 1):
+        edges[seq[i : i + 2]] += 1
+    last = seq[0]
+    result = [last]
+    remaining = dict(edges)
+    for _ in range(len(seq) - 1):
+        candidates = [(k, v) for k, v in remaining.items() if k[0] == last and v > 0]
+        if not candidates:
+            candidates = [(k, v) for k, v in remaining.items() if v > 0]
+        if not candidates:
+            result.append(rng.choice("ACGT"))
+        else:
+            total = sum(v for _, v in candidates)
+            r = rng.random() * total
+            cum = 0
+            for edge, count in candidates:
+                cum += count
+                if r <= cum:
+                    result.append(edge[1])
+                    remaining[edge] -= 1
+                    last = edge[1]
+                    break
+    return "".join(result)
+
+
 def read_fasta(path: str | Path) -> Iterator[tuple[str, str]]:
     """Yield (record_id, sequence) pairs from plain or gzipped FASTA."""
 
@@ -144,8 +213,31 @@ def read_fasta(path: str | Path) -> Iterator[tuple[str, str]]:
             yield name, "".join(parts)
 
 
-def scan_fasta(path: str | Path, **kwargs: object) -> Iterator[tuple[str, SHPResult]]:
-    """Compute SHP metrics for every FASTA record."""
+def scan_fasta(
+    path: str | Path, *, workers: int = 1, **kwargs: object
+) -> Iterator[tuple[str, SHPResult]]:
+    """Compute SHP metrics for every FASTA record.
 
-    for name, seq in read_fasta(path):
-        yield name, compute_shp(seq, **kwargs)
+    Set workers > 1 to process multiple sequences in parallel.
+    """
+    if workers <= 1:
+        for name, seq in read_fasta(path):
+            yield name, compute_shp(seq, **kwargs)
+        return
+
+    # Collect all records for parallel dispatch
+    records = list(read_fasta(path))
+    records.sort(key=lambda x: -len(x[1]))  # longest first for load balance
+
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        futures = {
+            executor.submit(compute_shp, seq, **kwargs): name for name, seq in records
+        }
+        for future in as_completed(futures):
+            name = futures[future]
+            try:
+                result = future.result()
+            except Exception as exc:
+                print(f"[shp] warning: {name}: {exc}", file=__import__("sys").stderr)
+                continue
+            yield name, result

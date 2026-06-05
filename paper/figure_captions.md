@@ -6,7 +6,8 @@ SHP projects each local nucleotide window into two binary hash activations:
 chroma, which records which 3-mers are present, and rhythm, which records which
 adjacent 3-mer transitions occur. Cross-harm is the Jaccard distance between
 these two views. Consecutive cross-harm displacement defines calibrated
-structural events (`fixed_wit`) and excess event intensity (`tail_energy`).
+structural events (`fixed_wit`) and excess event intensity (`tail_energy`),
+which are assembled into CDS/UTR readout matrices for downstream screening.
 
 ## Figure 2. Calibration and genome-wide structural event rates
 

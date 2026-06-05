@@ -317,6 +317,75 @@ def fig1_method() -> None:
     def arrow(x1: float, y1: float, x2: float, y2: float, color: str = COL["muted"]) -> None:
         ax.annotate("", xy=(x2, y2), xytext=(x1, y1), arrowprops=dict(arrowstyle="-|>", lw=1.4, color=color))
 
+    def readout_matrix(x: float, y: float, w: float, h: float) -> None:
+        ax.add_patch(
+            patches.FancyBboxPatch(
+                (x, y),
+                w,
+                h,
+                boxstyle="round,pad=0.02,rounding_size=0.08",
+                fc="#edf4ed",
+                ec=COL["green"],
+                lw=1.0,
+            )
+        )
+        ax.text(x + w / 2, y + h - 0.18, "readout matrix", ha="center", va="center", fontsize=8, fontweight="bold")
+        left = x + 0.25
+        col1 = x + w - 1.35
+        col2 = x + w - 0.55
+        top = y + h - 0.42
+        ax.text(col1, top, "CDS", ha="center", va="center", fontsize=6.8, color=COL["muted"], fontweight="bold")
+        ax.text(col2, top, "UTR", ha="center", va="center", fontsize=6.8, color=COL["muted"], fontweight="bold")
+        rows = [
+            ("fixed_wit", "0.012", "0.030"),
+            ("tail_energy", "0.0001", "0.0007"),
+            ("skew_d", "+0.8", "+1.2"),
+            ("kurt_d", "+0.1", "+1.7"),
+        ]
+        row_gap = 0.17
+        for i, (name, cds, utr) in enumerate(rows):
+            yy = top - (i + 1) * row_gap
+            ax.text(left, yy, name, ha="left", va="center", fontsize=6.7)
+            ax.text(col1, yy, cds, ha="center", va="center", fontsize=6.7)
+            ax.text(col2, yy, utr, ha="center", va="center", fontsize=6.7)
+            if i < len(rows) - 1:
+                ax.plot([x + 0.18, x + w - 0.18], [yy - 0.105, yy - 0.105], color="#d7e3d8", lw=0.6)
+
+    def axis_panel(
+        x: float,
+        y: float,
+        w: float,
+        h: float,
+        title: str,
+        subtitle: str,
+        label: str,
+        active: list[int],
+        fc: str,
+        color: str,
+    ) -> None:
+        ax.add_patch(
+            patches.FancyBboxPatch(
+                (x, y),
+                w,
+                h,
+                boxstyle="round,pad=0.02,rounding_size=0.08",
+                fc=fc,
+                ec=color,
+                lw=1.0,
+            )
+        )
+        ax.text(x + w / 2, y + h - 0.20, title, ha="center", va="center", fontsize=9, color=COL["ink"])
+        ax.text(x + w / 2, y + h - 0.42, subtitle, ha="center", va="center", fontsize=7.2, color=COL["ink"])
+        ax.text(x + 0.43, y + 0.23, label, ha="left", va="center", fontsize=7.2, color=COL["ink"], fontweight="bold")
+        sx = x + 0.95
+        sy = y + 0.25
+        for i in range(16):
+            xx = sx + (i % 8) * 0.075
+            yy = sy - (i // 8) * 0.075
+            fill = color if i in active else "#eef1f4"
+            edge = color if i in active else "#d9dee6"
+            ax.add_patch(patches.Rectangle((xx, yy), 0.052, 0.052, fc=fill, ec=edge, lw=0.5))
+
     ax.text(0.25, 5.65, "Figure 1. SHP turns one nucleotide stream into two structural views", fontsize=14, fontweight="bold")
     ax.text(
         0.25,
@@ -333,30 +402,25 @@ def fig1_method() -> None:
         box(x0 + i * 0.64, 4.55, 0.52, 0.36, kmer, fc, fs=8)
     box(0.45, 4.05, 5.2, 0.28, "128 nt sliding window", "#f3f5f7", "#d9dee6", fs=8)
 
-    arrow(3.05, 4.05, 3.05, 3.68)
-    box(0.95, 3.0, 2.4, 0.55, "Chroma\n3-mer presence", "#dff3f5", COL["chroma"])
-    box(3.95, 3.0, 2.4, 0.55, "Rhythm\n3-mer transitions", "#f9e4ea", COL["rhythm"])
-    arrow(2.1, 4.05, 2.1, 3.55, COL["chroma"])
-    arrow(4.9, 4.05, 4.9, 3.55, COL["rhythm"])
+    axis_panel(0.45, 2.72, 2.45, 0.83, "Chroma", "3-mer presence", "C_t", [0, 2, 5, 7, 10, 13], "#dff3f5", COL["chroma"])
+    axis_panel(3.20, 2.72, 2.45, 0.83, "Rhythm", "3-mer transitions", "R_t", [1, 2, 6, 8, 10, 14], "#f9e4ea", COL["rhythm"])
+    arrow(1.68, 4.05, 1.68, 3.55, COL["chroma"])
+    arrow(4.43, 4.05, 4.43, 3.55, COL["rhythm"])
+    arrow(1.68, 2.72, 2.65, 2.20, COL["chroma"])
+    arrow(4.43, 2.72, 4.05, 2.20, COL["rhythm"])
+    box(
+        1.45,
+        1.42,
+        3.8,
+        0.78,
+        "cross-harm trace\nh_t = 1 - J(C_t, R_t)\nd_t > theta_0 -> event",
+        "#f4f1e4",
+        COL["gold"],
+        fs=7,
+    )
 
-    draw_bitset(ax, 1.18, 2.42, [0, 2, 5, 7, 10, 13], COL["chroma"], "C_t")
-    draw_bitset(ax, 4.18, 2.42, [1, 2, 6, 8, 10, 14], COL["rhythm"], "R_t")
-    arrow(2.25, 2.35, 3.85, 2.35)
-    arrow(5.18, 2.35, 6.05, 2.35)
-    box(6.25, 2.1, 2.05, 0.78, "cross-harm\nh_t = 1 - J(C_t, R_t)", "#f4f1e4", COL["gold"])
-
-    xs = np.linspace(0, 1, 80)
-    y = 0.23 + 0.12 * np.sin(12 * xs) + 0.08 * np.exp(-((xs - 0.68) ** 2) / 0.002)
-    ax.plot(6.45 + 1.55 * xs, 1.4 + y, color=COL["ink"], lw=1.3)
-    ax.axhline(1.4 + 0.38, xmin=0.635, xmax=0.805, color=COL["red"], lw=1.0, ls="--")
-    ax.text(7.25, 1.97, "d_t = |h_t - h_t-1|", ha="center", va="bottom", fontsize=8)
-    arrow(7.25, 2.1, 7.25, 1.86)
-    box(8.65, 1.23, 1.05, 1.2, "outputs\nfixed_wit\ntail_energy", "#edf4ed", COL["green"], fs=8)
-    arrow(8.3, 2.48, 8.65, 1.88, COL["green"])
-
-    box(0.55, 0.55, 2.35, 0.5, "No labels", "#f4f5f7", "#cfd5df", fs=8)
-    box(3.15, 0.55, 2.35, 0.5, "No training", "#f4f5f7", "#cfd5df", fs=8)
-    box(5.75, 0.55, 2.35, 0.5, "Fair-IID calibrated", "#f4f5f7", "#cfd5df", fs=8)
+    readout_matrix(5.85, 1.23, 3.35, 1.18)
+    arrow(5.25, 1.81, 5.85, 1.81, COL["green"])
     save_all(fig, "fig1_shp_method")
 
 
@@ -680,7 +744,8 @@ SHP projects each local nucleotide window into two binary hash activations:
 chroma, which records which 3-mers are present, and rhythm, which records which
 adjacent 3-mer transitions occur. Cross-harm is the Jaccard distance between
 these two views. Consecutive cross-harm displacement defines calibrated
-structural events (`fixed_wit`) and excess event intensity (`tail_energy`).
+structural events (`fixed_wit`) and excess event intensity (`tail_energy`),
+which are assembled into CDS/UTR readout matrices for downstream screening.
 
 ## Figure 2. Calibration and genome-wide structural event rates
 
