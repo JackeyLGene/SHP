@@ -1,0 +1,5 @@
+record_id	length	n_windows	n_transitions	mean_h	mean_d	fixed_wit	tail_energy	skew_d	kurt_d
+periodic_acgt	256	6	5	1	0	0	0	0	-3
+block_switch	512	16	15	1	0	0	0	0	-3
+mixed_transition	378	11	10	0.801527	0.0467181	0.2	0.00156062	0.240629	-1.69822
+coding_like	234	5	4	0.676083	0.0107639	0	0	0.525375	-1.33347

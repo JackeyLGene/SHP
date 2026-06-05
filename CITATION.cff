@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use SHP, please cite the repository or associated preprint."
+title: "SHP: Calibrated Structural Readout for Symbolic Biological Sequences"
+authors:
+  - family-names: "Gene"
+    given-names: "Jackey L."
+version: "0.1.0"
+date-released: "2026-06-05"
+license: "MIT"
+repository-code: "https://github.com/JackeyLGene/SHP"
+contact:
+  - email: "jackey.l.gene@outlook.com"
