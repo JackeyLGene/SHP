@@ -10,33 +10,35 @@ June 2026
 ## Abstract
 
 Genomic sequence analysis typically begins with annotation: gene models, functional
-domains, expression data, or evolutionary conservation. We introduce **SHP
-(Saussurean Hash Projection)**, a lightweight, zero-training structural readout for
-nucleotide sequences. Feature computation is annotation-free after CDS/UTR sequence
-extraction: Ensembl transcript annotations are used to define sequence regions, but no
-functional labels, expression data, conservation scores, or disease annotations enter
-the SHP calculation. SHP encodes each sequence window through two complementary views
-of the same 3-mer stream--a *chroma* axis (which 3-mers are present) and a *rhythm*
-axis (which 3-mer transitions occur)--into the same 64-dimensional hash space, then
-measures structural tension via the Jaccard distance between them. The instrument is
-calibrated against a fair IID baseline (k=4, theta_0 = 0.0999) to define a unit of
-structural reorganization.
+domains, expression data, or evolutionary conservation. We introduce SHP (Saussurean
+Hash Projection), a lightweight, zero-training structural readout for nucleotide
+sequences. Feature computation is annotation-free after CDS/UTR sequence extraction:
+Ensembl transcript annotations are used to define sequence regions, but no functional
+labels, expression data, conservation scores, or disease annotations enter the SHP
+calculation. SHP encodes each sequence window through two complementary views of the
+same 3-mer stream -- a chroma axis (which 3-mers are present) and a rhythm axis (which
+3-mer transitions occur) -- into the same 64-dimensional hash space, then measures
+structural tension via the Jaccard distance between them. The instrument is calibrated
+against a fair IID baseline (k = 4, theta0 = 0.0999).
 
 Applied to the full human protein-coding genome (19,491 genes, 224,518 transcript
-isoforms, Ensembl release 115), SHP produces an 8-dimensional per-gene structural feature vector (fixed_wit,
-tail_energy, skew, kurt for both CDS and UTR) plus derived gradients, without
-consulting any external functional labels. We report: (1) CDS structural quiescence
-rate is 48.8% genome-wide, with regime-specific signatures — MHC class I genes show 80%
-CDS quiescence, while neural genes show only 20%; (2) a UTR/CDS structural gradient
-distinguishes functional regimes, with KRTAP genes as the only CDS-led regime (85.7%
-UTR quiescence); (3) SHP vectors carry functional information: nearest-centroid
-classification achieves 30--40% per-category recall for olfactory receptors, HLA genes,
-and keratins from 2D SHP features alone; (4) this clustering is not a GC-content proxy —
-zinc-finger genes (GC=47%) and transcription factors (GC=63%) are separated by 16
-percentage points of GC yet cluster together in SHP space (d=0.004). The method requires
-no training, no model weights, and no external functional databases beyond the input
-sequence files. We provide a calibrated, annotation-free structural spectroscopy tool
-for genomic sequence screening.
+isoforms, Ensembl release 115), SHP produces an 8-dimensional per-gene structural
+feature vector (fixed_wit, tail_energy, skew, kurt for both CDS and UTR) plus derived
+gradients, without consulting any external functional labels. We report the following
+findings: (1) the CDS structural quiescence rate is 48.8% genome-wide, with
+regime-specific signatures -- MHC class I genes show 80% CDS quiescence, while neural
+genes show only 20%; (2) a UTR/CDS structural gradient distinguishes functional
+regimes, with KRTAP genes as the only CDS-led regime (85.7% UTR quiescence); (3) SHP
+vectors carry functional information: nearest-centroid classification achieves 30-40%
+per-category recall for olfactory receptors, HLA genes, and keratins from 2D SHP
+features alone; (4) this clustering is not a GC-content proxy -- zinc-finger genes
+(GC=47%) and transcription factors (GC=63%) are separated by 16 percentage points of GC
+yet cluster together in SHP space (d = 0.004). The method requires no training, no
+model weights, and no external functional databases beyond the input sequence files.
+Code, demo FASTA input, calibration summaries, figure-generation scripts, and the
+per-gene and per-isoform SHP matrices are provided for replication. We provide a
+calibrated, annotation-free structural spectroscopy tool for genomic sequence
+screening.
 
 ---
 
@@ -70,17 +72,17 @@ which the dual-axis encoding was developed is required to use or interpret the r
 The core measurement is straightforward. A sliding window of 128 nucleotides is
 projected into a 64-dimensional hash space twice: once encoding which 3-mers appear
 (chroma), and once encoding which 3-mer-to-3-mer transitions occur (rhythm). The
-Jaccard distance (Jaccard, 1901) between these two binary activation patterns — the *cross-harm* —
-measures the structural tension between the paradigmatic and syntagmatic axes of the
-local sequence grammar. A structural event (SHP-wit) is registered when the cross-harm
-changes between consecutive windows by more than the 99th percentile of fluctuations
-observed in a maximally unstructured (fair IID) stream of the same alphabet.
+Jaccard distance $1 - |C_t \cap R_t| / |C_t \cup R_t|$ (Jaccard, 1901) between these
+two binary activation patterns---the *cross-harm* $h_t$---measures the structural
+tension between the paradigmatic and syntagmatic axes of the local sequence grammar.
+A structural event is registered when the cross-harm displacement
+$d_t = |h_t - h_{t-1}|$ exceeds the 99th percentile of fluctuations observed in a
+maximally unstructured (fair IID) stream of the same alphabet.
 
-We calibrated this instrument on synthetic symbol streams spanning compositions from
-40--70% GC, CpG suppression, and codon periodicity, confirming the resolution threshold
-(theta_0 = 0.0999 for 128-nt windows) is stable across GC content, CpG suppression,
-and codon periodicity controls. We
-then applied it to all human protein-coding genes with measurable CDS and UTR
+The instrument was calibrated on synthetic symbol streams spanning GC content from
+40--70%, CpG suppression, and codon periodicity; the resolution threshold
+($\theta_0 = 0.0999$ for 128-nt windows) proved stable across these controls.
+We then applied it to all human protein-coding genes with measurable CDS and UTR
 (Ensembl release 115, 19,491 genes), producing per-gene structural vectors without
 using any gene ontology terms, disease labels, expression data, or conservation scores.
 
@@ -94,64 +96,69 @@ annotation-free genomic sequence screening.
 
 ## Results
 
+![Figure 1. SHP turns one nucleotide stream into two structural views. Chroma asks which 3-mers are present; rhythm asks how 3-mers transition. Cross-harm measures their mismatch.](figures/fig1_shp_method.png)
+
 ### SHP Calibration and Measurement Framework
 
-SHP operates on any discrete symbol stream with alphabet size k >= 4. For DNA (k=4),
-a sliding window of W=128 nucleotides is analyzed at n=3 (trinucleotide) granularity
-with D=64 hash buckets — the combinatorial saturation point k^3 = D. Within each window,
+SHP operates on any discrete symbol stream with alphabet size $k \geq 4$. For DNA ($k=4$),
+a sliding window of $W = 128$ nucleotides is analyzed at $n = 3$ (trinucleotide) granularity
+with $D = 64$ hash buckets, the combinatorial saturation point $k^3 = D$. Within each window,
 chroma and rhythm vectors are computed as binary hash activations (presence/absence, not
-frequency-weighted). Cross-harm h_t = 1 - Jaccard(chroma_t, rhythm_t) is computed per
-window, and displacement d_t = |h_t - h_{t-1}| between consecutive windows forms the
+frequency-weighted). Cross-harm $h_t = 1 - J(C_t, R_t)$ is computed per
+window, where $J$ denotes the Jaccard similarity of the two hash-activation sets.
+Displacement $d_t = |h_t - h_{t-1}|$ between consecutive windows forms the
 primary signal trace.
 
 The instrument is calibrated against a fair IID baseline: 10,000-symbol streams with
-k=4 symbols drawn independently with uniform probability, repeated across 20 random
+$k = 4$ symbols drawn independently with uniform probability, repeated across 20 random
 seeds. The 99th percentile of cross-harm displacement under this baseline defines the
-resolution threshold theta_0 = 0.0999 +/- 0.0067 (mean +/- 1 SD across 20 random seeds).
+resolution threshold $\theta_0 = 0.0999 \pm 0.0067$ (mean $\pm$ 1 SD across seeds).
 
 From this calibration, we define two primary SHP metrics per sequence:
 
-- **fixed_wit** = COUNT(d_t > theta_0) / N_transitions — the structural event rate, measuring how frequently the local 3-mer grammar undergoes reorganization beyond the random-fluctuation baseline.
-- **tail_energy** = mean(max(0, d_t - theta_0)) — the structural event intensity, measuring the magnitude of excess displacement above baseline.
+- $\text{fixed\_wit} = \text{COUNT}(d_t > \theta_0) \,/\, N_{\text{transitions}}$ — the structural event rate, measuring how frequently the local 3-mer grammar undergoes reorganization beyond the random-fluctuation baseline.
+- $\text{tail\_energy} = \overline{\max(0, d_t - \theta_0)}$ — the structural event intensity, measuring the magnitude of excess displacement above baseline.
 
-A third, derived metric — the distribution shape (skew, kurt) of d_t — captures the
+A third, derived metric---the distribution shape (skew, kurt) of $\{d_t\}$---captures the
 structural phase of the sequence (periodic, random, Markov-biased, block-structured).
 
-We validated theta_0 against DNA-specific composition constraints: GC content from
+We validated $\theta_0$ against DNA-specific composition constraints: GC content from
 40--70%, CpG-suppressed dinucleotide Markov chains, and codon-periodic synthetic CDS
-all produce theta_0 within 5% of the fair-IID reference (no pairwise t-test significant
-at Bonferroni-corrected alpha = 0.01). The threshold is stable for the tested DNA
-parameter setting (k=4, n=3, D=64, W=128).
+all produce $\theta_0$ within 5% of the fair-IID reference (no pairwise $t$-test significant
+at Bonferroni-corrected $\alpha = 0.01$). The threshold is stable for the tested DNA
+parameter setting ($k = 4$, $n = 3$, $D = 64$, $W = 128$).
 
 A critical methodological finding: when each stream uses its own P99 as threshold
-(self-thresholding), all streams produce a fixed_wit of approximately 0.007. This
+(self-thresholding), all streams produce a $\text{fixed\_wit}$ of approximately $0.007$. This
 apparent constancy is a statistical artifact of percentile-based thresholding. Under
-the fixed theta_0, fixed_wit spans a 10x range across stream types.
-All results reported below use fixed theta_0 = 0.0999.
+the fixed $\theta_0$, $\text{fixed\_wit}$ spans a 10-fold range across stream types.
+All results reported below use the fixed $\theta_0 = 0.0999$.
 
 ### Genome-Wide SHP Matrix
 
-We processed all 19,491 human protein-coding genes with measurable CDS (>=128 nt) from
-Ensembl release 115, plus 16,572 genes with measurable UTR. For each gene, we computed
-SHP metrics for the longest CDS transcript and its matching UTR (extracted by
+We processed all 19,491 human protein-coding genes with measurable CDS ($\geq 128$ nt)
+from Ensembl release 115, plus 16,572 genes with measurable UTR. For each gene, SHP
+metrics were computed for the longest CDS transcript and its matching UTR (extracted by
 transcript-ID alignment of cDNA minus CDS). An additional 224,518 individual transcript
 isoforms were processed for isoform-level analysis.
 
-After applying a minimum-window filter (n_windows >= 10, removing 659 genes with
-insufficient window coverage), the genome-wide distribution of SHP metrics is:
+After applying a minimum-window filter ($n_{\text{windows}} \geq 10$, removing 659 genes
+with insufficient window coverage), the genome-wide distribution of SHP metrics is:
 
-| Metric | CDS (n_w>=10 filter) | UTR (n_w>=10 filter) |
-|--------|----------------------|----------------------|
+| Metric | CDS ($n_w \geq 10$) | UTR ($n_w \geq 10$) |
+|--------|---------------------|---------------------|
 | Genes | 18,832 | 15,278 |
-| Mean fixed_wit | 0.0165 | 0.0201 |
-| Exactly zero (fw=0.0000) | 44.8% | 40.1% |
-| Quiescent (fw < 0.01) | 48.8% | 44.2% |
-| Mean gradient (UTR-CDS), both-region genes (N=14,996) | — | +0.0035 |
+| Mean $\text{fixed\_wit}$ | 0.0165 | 0.0201 |
+| Exactly zero ($\text{fw}=0$) | 44.8% | 40.1% |
+| Quiescent ($\text{fw} < 0.01$) | 48.8% | 44.2% |
+| Mean gradient (UTR$-$CDS), both-region genes ($N = 14{,}996$) | --- | $+0.0035$ |
 
 Approximately 45% of protein-coding genes show exactly zero structural events in
 their CDS (48.8% below the 0.01 quiescence threshold). UTRs are consistently more
 structurally active than CDSs in the both-region subset (mean gradient +0.0035,
 N=14,996 genes with both CDS and UTR passing the window filter).
+
+![Figure 2. Calibration and genome-wide structural event rates. (A) Fair-IID displacement distribution defining theta0=0.0999. (B) Fixed-threshold readout for control streams. (C) Genome-wide CDS and UTR fixed_wit distributions. (D) Exact-zero and quiescent fractions.](figures/fig2_calibration_genome.png)
 
 ### Regime-Level Structural Signatures
 
@@ -197,6 +204,8 @@ DUAL-ACTIVE (3%). The UTR-CONTROLLED phase, exemplified by PRB3 (UTR fixed_wit=0
 ratio=20x), confirming the signal is transition-driven rather than a composition
 artifact.
 
+![Figure 3. Biological regimes occupy distinct CDS/UTR structural states. (A) Mean CDS and UTR fixed_wit by regime. (B) Regime centroids in CDS/UTR structural space. (C) Min-max normalized heat map of regime signatures.](figures/fig3_regime_signatures.png)
+
 ### SHP Vectors Carry Functional Information
 
 We tested whether SHP structural vectors carry functional signal by assigning broad
@@ -206,7 +215,7 @@ annotation databases. Category labels were used only for validation, not as inpu
 features.
 
 Using only 2-dimensional SHP vectors (CDS fixed_wit, UTR fixed_wit), nearest-centroid
-leave-one-out classification achieved 13.2% overall accuracy vs 11.1% chance across 9
+leave-one-out classification achieved 13.2% overall accuracy vs.\ 11.1% random baseline (9 categories) across
 categories (N=2,034 labeled genes). Per-category recall: OlfactoryReceptor 40.5%, HLA
 33.3%, Keratin 30.8% — three categories at 3--4x chance level from pure 3-mer
 structural grammar alone. GPCR and Histone categories showed near-chance performance in
@@ -223,9 +232,11 @@ separated by 13pp of GC yet cluster together in SHP space. Bootstrap validation
 category pairs have 95% CI lower bounds excluding zero.
 
 A label permutation test (200 shuffles) confirmed the observed 13.2% classification
-accuracy exceeds the null distribution (mean null accuracy 6.9% +/- 2.5%, Z=2.5). The
+accuracy exceeds the null distribution (mean null accuracy $6.9\% \pm 2.5\%$, $Z = 2.5$, $p < 0.01$). The
 modest absolute accuracy reflects the deliberately low-dimensional feature space
 (2 of 8 available SHP dimensions).
+
+![Figure 4. SHP carries functional signal orthogonal to simple composition. (A) Functional categories in SHP space. (B) SHP distance vs GC difference for selected pairs. (C) Leave-one-out nearest-centroid recall.](figures/fig4_functional_orthogonality.png)
 
 ### Isoform Structural Diversity
 
@@ -296,7 +307,8 @@ CDS annotation pipelines for definitive cross-species comparison.
 ### Practical Utility
 
 SHP is intentionally lightweight. The entire genome scan (19,491 genes, 224,518
-isoforms) runs in ~6,200 seconds on a single CPU core. No GPU, no model weights, and no
+isoforms) completes in approximately 1.7 hours (~6,200 CPU-seconds) on a single core.
+No GPU, no model weights, and no
 external functional databases are required once the input sequence files are available.
 The method is implementable in ~200 lines of Python using only the standard library
 (hashlib, random, math).
@@ -313,31 +325,33 @@ knowledge about gene function and can be computed for any organism with a CDS FA
 
 ### SHP Encoding
 
-For a nucleotide sequence of length L, a sliding window of W=128 nucleotides is
-applied with stride max(1, W/5). For each window at position t:
+For a nucleotide sequence of length $L$, a sliding window of $W = 128$ nucleotides is
+applied with stride $\max(1, W/5)$. For each window at position $t$:
 
 **Chroma vector:** each overlapping 3-mer in the window is hashed via MD5, and the
-corresponding bucket in a D=64 binary vector is set to 1. Formally,
-C_t[i] = 1 if any 3-mer in window t hashes to bucket i, else 0.
+corresponding bucket in a $D = 64$ binary vector is set to 1. Formally,
+$C_t[i] = 1$ if any 3-mer in window $t$ hashes to bucket $i$, else $0$.
 
-**Rhythm vector:** each adjacent 3-mer pair (3-mer_i, 3-mer_{i+1}) is hashed with a
-distinct label prefix, and the corresponding bucket in the same D=64 hash space is
-set to 1. Formally, R_t[i] = 1 if any 3-mer transition in window t hashes to bucket i,
-else 0.
+**Rhythm vector:** each adjacent 3-mer pair $(\text{3-mer}_i, \text{3-mer}_{i+1})$ is
+hashed with a distinct label prefix, and the corresponding bucket in the same $D = 64$
+hash space is set to 1. Formally, $R_t[i] = 1$ if any 3-mer transition in window $t$
+hashes to bucket $i$, else $0$.
 
-**Cross-harm:** h_t = 1 - |C_t & R_t| / |C_t | R_t| (Jaccard distance of hash-
-activation sets).
+**Cross-harm:** $h_t = 1 - |C_t \cap R_t| \,/\, |C_t \cup R_t|$, the Jaccard distance
+between the two hash-activation sets.
 
-**Displacement:** d_t = |h_t - h_{t-1}| for t >= 2; d_1 = 0.
+**Displacement:** $d_t = |h_t - h_{t-1}|$ for $t \geq 2$; $d_1 = 0$.
 
 ### Calibration
 
-A fair IID stream of T=10,000 symbols from the k=4 alphabet {A, C, G, T} with
-uniform probability p=0.25 per symbol is generated. d_t values are computed across
-sliding windows. The 99th percentile of the empirical d_t distribution, averaged
-across 20 independent random seeds, defines theta_0 = 0.0999 +/- 0.0067.
+A fair IID stream of $T = 10{,}000$ symbols from the $k = 4$ alphabet $\{\text{A, C, G, T}\}$
+with uniform probability $p = 0.25$ per symbol is generated. $d_t$ values are computed
+across sliding windows. The 99th percentile of the empirical $d_t$ distribution,
+averaged across 20 independent random seeds, defines
+$\theta_0 = 0.0999 \pm 0.0067$.
 
-For W=64 (short-UTR sensitivity mode), the same procedure yields theta_0=0.1214 +/- 0.0082.
+For $W = 64$ (short-UTR sensitivity mode), the same procedure yields
+$\theta_0 = 0.1214 \pm 0.0082$.
 
 ### Biological Data
 

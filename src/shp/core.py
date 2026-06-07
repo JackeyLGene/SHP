@@ -23,6 +23,7 @@ from typing import Iterable, Iterator
 
 
 DEFAULT_THETA0 = 0.0999
+DEFAULT_DIM = 64
 
 
 @dataclass(frozen=True)
@@ -81,7 +82,7 @@ def compute_shp(
     seq: str,
     *,
     ngram: int = 3,
-    dim: int = 64,
+    dim: int = DEFAULT_DIM,
     window: int = 128,
     stride: int | None = None,
     theta0: float = DEFAULT_THETA0,
@@ -124,7 +125,7 @@ def compute_shp(
 
 
 def calibrate_theta0(
-    ngram: int = 3, dim: int = 64, window: int = 128, seeds: int = 20, t: int = 10000
+    ngram: int = 3, dim: int = DEFAULT_DIM, window: int = 128, seeds: int = 20, t: int = 10000
 ) -> float:
     """Calibrate theta0 from fair IID streams.
 
