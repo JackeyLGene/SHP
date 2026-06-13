@@ -35,7 +35,7 @@ def _add_scan_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentPar
     scan.add_argument("--fasta", required=True, help="input FASTA path, plain text or .gz")
     scan.add_argument("--out", help="output TSV path; defaults to stdout")
     scan.add_argument("--ngram", type=int, default=3, help="n-gram size, default: 3")
-    scan.add_argument("--dim", type=int, default=64, help="hash projection dimension, default: 64")
+    scan.add_argument("--dim", type=int, default=128, help="hash projection dimension, default: 128")
     scan.add_argument("--window", type=int, default=128, help="window size in symbols, default: 128")
     scan.add_argument("--stride", type=int, default=None, help="window stride, default: window // 5")
     scan.add_argument(
@@ -59,7 +59,7 @@ def _add_scan_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentPar
 def _add_calibrate_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     cal = subparsers.add_parser("calibrate", help="calibrate theta0 from fair IID streams")
     cal.add_argument("--ngram", type=int, default=3, help="n-gram size, default: 3")
-    cal.add_argument("--dim", type=int, default=64, help="hash projection dimension, default: 64")
+    cal.add_argument("--dim", type=int, default=128, help="hash projection dimension, default: 128")
     cal.add_argument("--window", type=int, default=128, help="window size, default: 128")
     cal.add_argument("--seeds", type=int, default=20, help="number of fair IID seeds, default: 20")
     cal.add_argument(

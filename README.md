@@ -58,10 +58,16 @@ Default DNA setting:
 
 - alphabet: `A/C/G/T`
 - n-gram: `3`
-- hash dimension: `64`
+- hash dimension: `128`
 - window: `128 nt`
 - stride: `window // 5`
-- threshold: `theta0 = 0.0999`
+- threshold: `theta0 = 0.078`
+
+> **v2.1 (2026-06-12):** Default hash dimension increased from D=64 to D=128 and
+> theta0 from 0.0999 to 0.078, based on a D x percentile parameter sweep on 300
+> matched CDS-cDNA pairs. D=128 reduces hash collisions from ~40% to ~20% and
+> corrects the CDS/cDNA structural event direction. Use `--dim 64 --theta0 0.0999`
+> for backwards compatibility with v1.0 outputs.
 
 `fixed_wit` is the fraction of consecutive windows whose cross-harm displacement
 exceeds the calibrated threshold. `tail_energy` adds event magnitude by averaging

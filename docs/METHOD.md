@@ -8,7 +8,7 @@ alphabet = ACGT
 n-gram   = 3
 dim      = 64
 window   = 128
-theta0   = 0.0999
+theta0   = 0.078
 ```
 
 ## Encoding
@@ -36,8 +36,8 @@ d_t = |h_t - h_(t-1)|
 
 ## Calibration
 
-The default threshold `theta0 = 0.0999` is the fair-IID baseline used in the
-current GeneGrammar experiments for `k=4, n=3, D=64`. A structural event is
+The default threshold `theta0 = 0.078` is the fair-IID baseline used in the
+current GeneGrammar experiments for `k=4, n=3, D=128`. A structural event is
 counted when:
 
 ```text

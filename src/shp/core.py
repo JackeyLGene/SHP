@@ -22,8 +22,8 @@ from pathlib import Path
 from typing import Iterable, Iterator
 
 
-DEFAULT_THETA0 = 0.0999
-DEFAULT_DIM = 64
+DEFAULT_THETA0 = 0.078
+DEFAULT_DIM = 128
 
 
 @dataclass(frozen=True)
@@ -91,7 +91,7 @@ def compute_shp(
     """Compute SHP summary metrics for one sequence.
 
     Parameters are deliberately explicit so the calibration setting is visible.
-    The default DNA setting is k=4, n=3, D=64, W=128, theta0=0.0999.
+    The default DNA setting is k=4, n=3, D=128, W=128, theta0=0.078.
     """
 
     if stride is None:

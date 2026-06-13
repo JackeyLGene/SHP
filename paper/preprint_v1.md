@@ -5,6 +5,14 @@ Independent researcher
 Correspondence: jackey.l.gene@outlook.com  
 June 2026
 
+> **v2.1 parameter update (2026-06-12):** The default hash dimension has been
+> increased from D=64 to D=128 and theta0 from 0.0999 to 0.078, based on an
+> expanded D × percentile calibration sweep on 300 matched CDS-cDNA pairs.
+> D=128 reduces hash collisions from ~40% to ~20% and corrects the CDS/cDNA
+> structural event direction. This preprint text reports v1.0 parameters
+> (D=64, theta0=0.0999). The instrument default has been updated; re-running
+> analyses with `--dim 128 --theta0 0.078` is recommended.
+
 ---
 
 ## Abstract
